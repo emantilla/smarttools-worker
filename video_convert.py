@@ -5,15 +5,12 @@ import datetime
 import smtplib
 import logging
 import json
-from configparser import ConfigParser
 import email
 from email.mime.text import MIMEText
 
 from botocore.exceptions import ClientError
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-logging.basicConfig(filename='video_convert.log', level=logging.INFO)
-db_con = None
 sched = BlockingScheduler()
 
 
@@ -22,80 +19,20 @@ def timed_job():
     proccess_video()
 
 
-def config_sqs(filename='db_conf.ini', section='sqs'):
-    # create a parser
-    parser = ConfigParser()
-    # read config file
-    parser.read(filename)
-
-    # get section, default to sqs
-    sqs = {}
-    if parser.has_section(section):
-        params = parser.items(section)
-        for param in params:
-            sqs[param[0]] = param[1]
-    else:
-        raise Exception(
-            'Section {0} not found in the {1} file'.format(section, filename))
-
-    return sqs
-
-
-def config_s3(filename='db_conf.ini', section='s3'):
-    # create a parser
-    parser = ConfigParser()
-    # read config file
-    parser.read(filename)
-
-    # get section, default to sqs
-    s3 = {}
-    if parser.has_section(section):
-        params = parser.items(section)
-        for param in params:
-            s3[param[0]] = param[1]
-    else:
-        raise Exception(
-            'Section {0} not found in the {1} file'.format(section, filename))
-
-    return s3
-
-
-def config_bd(filename='db_conf.ini', section='mongoDb'):
-    # create a parser
-    parser = ConfigParser()
-    # read config file
-    parser.read(filename)
-
-    # get section, default to postgresql
-    db = {}
-    if parser.has_section(section):
-        params = parser.items(section)
-        for param in params:
-            db[param[0]] = param[1]
-    else:
-        raise Exception(
-            'Section {0} not found in the {1} file'.format(section, filename))
-
-    return db
-
-
 def get_connection_sqs():
-    param = config_sqs()
-    sqs = boto3.client('sqs', region_name=param['region_name'], aws_access_key_id=param['aws_access_key_id'],
-                       aws_secret_access_key=param['aws_secret_access_key'])
+    sqs = boto3.client('sqs', region_name= os.environ.get('region_name'), aws_access_key_id=os.environ.get('aws_access_key_id'),
+                       aws_secret_access_key=os.environ.get('aws_secret_access_key'))
     return sqs
 
 
 def get_connection_s3():
-    param = config_sqs()
-    s3 = boto3.client('s3', region_name=param['region_name'], aws_access_key_id=param['aws_access_key_id'],
-                      aws_secret_access_key=param['aws_secret_access_key'])
+    s3 = boto3.client('s3', region_name=os.environ.get('region_name'), aws_access_key_id=os.environ.get('aws_access_key_id'),
+                      aws_secret_access_key=os.environ.get('aws_secret_access_key'))
     return s3
 
 
 def get_connection_bd():
-    params = config_bd()
-    client = MongoClient(params['host'])
+    client = MongoClient(os.environ.get('host'))
     db_con = client.smarttoolsdb
     return db_con
 
@@ -103,7 +40,7 @@ def get_connection_bd():
 def get_unproccessed_video():
     # Create SQS client
     sqs = get_connection_sqs()
-    queue_url = config_sqs()['queue_url']
+    queue_url = os.environ.get('queue_url')
 
     # Receive message from SQS queue
     response = sqs.receive_message(
@@ -129,8 +66,10 @@ def get_unproccessed_video():
 
 
 def proccess_video():
+    console.log('Inicio proccess_video')
     videos = get_unproccessed_video()
     if videos is not None:
+        console.log('Encontro mensajes en la cola')
         receipt_handle = videos['ReceiptHandle']
         video = json.loads(videos['Body'])
         path = video['video_file']
@@ -140,16 +79,16 @@ def proccess_video():
         output = output[0]
         now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S_")
         new_file_name = 'convert_' + now + output + '.mp4'
-        logging.info(datetime.datetime.now().strftime("%Y %m %d %H:%M:%S ") +
+        console.log(datetime.datetime.now().strftime("%Y %m %d %H:%M:%S ") +
                      'converting video: {}'.format(file_name))
-        subprocess.run("sh video_convert.sh {} {}".format(file_name, new_file_name), shell=True)
+        subprocess.run(" ffmpeg -i {} -vcodec h264 -acodec aac {}".format(file_name, new_file_name), shell=True)
 
         if upload_file(new_file_name):
             delete_message(receipt_handle)
             subprocess.run("rm {}".format(new_file_name), shell=True)
             update_video_status_converted(video['id'], new_file_name)
             send_email(video['id'])
-        logging.info(datetime.datetime.now().strftime("%Y %m %d %H:%M:%S  ") +
+        console.log(datetime.datetime.now().strftime("%Y %m %d %H:%M:%S  ") +
                      'video converted: {}'.format(file_name))
 
 
