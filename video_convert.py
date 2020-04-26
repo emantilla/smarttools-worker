@@ -7,6 +7,7 @@ import logging
 import json
 import email
 from email.mime.text import MIMEText
+import os
 
 from botocore.exceptions import ClientError
 from apscheduler.schedulers.blocking import BlockingScheduler
