@@ -5,8 +5,8 @@ import datetime
 import smtplib
 import logging
 import json
-import email
-from email.mime.text import MIMEText
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 import os
 
 from botocore.exceptions import ClientError
@@ -140,28 +140,47 @@ def update_video_status_converted(_id, file_name):
 
 
 def send_email(_id):
+    em = get_uservideo(_id)
+    body = """<body>
+    <p>Hola %s queremos agradecerte por participar en el concurso %s. Ingresa al <a href="%s/%s">sitio web</a> del concurso para ver tu video.</p>
+    <br>
+    <p>Cordialmente el equio de SmartTools</p>
+    </body>""" % (em['user_name'], concurso['name'], email_conf['base_url'], concurso['uniq_url'])
+    message = Mail(
+    from_email='smarttools-api@example.com',
+    to_emails=em['user_email'],
+    subject="{} - Revisa tu participación en el concurso {}".format(str(em['user_name']), str(concurso['name'])),
+    html_content=body)
+    try:
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        response = sg.send(message)
+        update_video_status_sended(_id)
+        print(response.status_code)
+        print(response.body)
+    except Exception as e:
+        print(e.message)
+    
+    
+    
+    
     email_conf = config_email()
     email_server = smtplib.SMTP(email_conf['server'], email_conf['port'])
     email_server.ehlo()
     email_server.starttls()
     email_server.ehlo()
     email_server.login(email_conf['account'], email_conf['password'])
-    em = get_uservideo(_id)
+    
     concurso = get_concurso(em['concurso_id'])
-    body = """<body>
-    <p>Hola %s queremos agradecerte por participar en el concurso %s. Ingresa al <a href="%s/%s">sitio web</a> del concurso para ver tu video.</p>
-    <br>
-    <p>Cordialmente el equio de SmartTools</p>
-    </body>""" % (em['user_name'], concurso['name'], email_conf['base_url'], concurso['uniq_url'])
+    
 
     msg = MIMEText(body, 'html')
-    msg['Subject'] = "{} - Revisa tu participación en el concurso {}".format(str(em['user_name']), str(concurso['name']))
+    msg['Subject'] = 
 
     try:
         email_server.sendmail(email_conf['sender'], str(
             em['user_email']), msg.as_string().encode("ascii", errors="ignore"))
 
-        update_video_status_sended(_id)
+        
     except smtplib.SMTPDataError as e:
         print(e)
 
