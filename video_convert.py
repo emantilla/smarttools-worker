@@ -159,32 +159,6 @@ def send_email(_id):
         print(response.body)
     except Exception as e:
         print(e.message)
-    
-    
-    
-    
-    email_conf = config_email()
-    email_server = smtplib.SMTP(email_conf['server'], email_conf['port'])
-    email_server.ehlo()
-    email_server.starttls()
-    email_server.ehlo()
-    email_server.login(email_conf['account'], email_conf['password'])
-    
-    concurso = get_concurso(em['concurso_id'])
-    
-
-    msg = MIMEText(body, 'html')
-    msg['Subject'] = 
-
-    try:
-        email_server.sendmail(email_conf['sender'], str(
-            em['user_email']), msg.as_string().encode("ascii", errors="ignore"))
-
-        
-    except smtplib.SMTPDataError as e:
-        print(e)
-
-    email_server.close()
 
 
 def config_email(filename='db_conf.ini', section='ses_aws'):
