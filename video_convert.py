@@ -66,10 +66,10 @@ def get_unproccessed_video():
 
 
 def proccess_video():
-    console.log('Inicio proccess_video')
+    print('Inicio proccess_video')
     videos = get_unproccessed_video()
     if videos is not None:
-        console.log('Encontro mensajes en la cola')
+        print('Encontro mensajes en la cola')
         receipt_handle = videos['ReceiptHandle']
         video = json.loads(videos['Body'])
         path = video['video_file']
@@ -79,7 +79,7 @@ def proccess_video():
         output = output[0]
         now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S_")
         new_file_name = 'convert_' + now + output + '.mp4'
-        console.log(datetime.datetime.now().strftime("%Y %m %d %H:%M:%S ") +
+        print(datetime.datetime.now().strftime("%Y %m %d %H:%M:%S ") +
                      'converting video: {}'.format(file_name))
         subprocess.run(" ffmpeg -i {} -vcodec h264 -acodec aac {}".format(file_name, new_file_name), shell=True)
 
@@ -88,7 +88,7 @@ def proccess_video():
             subprocess.run("rm {}".format(new_file_name), shell=True)
             update_video_status_converted(video['id'], new_file_name)
             send_email(video['id'])
-        console.log(datetime.datetime.now().strftime("%Y %m %d %H:%M:%S  ") +
+        print(datetime.datetime.now().strftime("%Y %m %d %H:%M:%S  ") +
                      'video converted: {}'.format(file_name))
 
 
