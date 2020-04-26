@@ -94,20 +94,19 @@ def proccess_video():
 
 
 def get_video(file_name, object_name):
-    param = config_s3()
-    media = str(param['converted_bucket']).split('/')
+    media = str(os.environ.get('converted_bucket')).split('/')
     object_name = media[0] + '/' + object_name
     s3 = get_connection_s3()
     print ('file_name' + file_name + '  object_name'+ object_name)
     try:
-        s3.download_file(param['bucket_name'], object_name, file_name)
+        s3.download_file(os.environ.get('bucket_name'), object_name, file_name)
     except ClientError as e:
         print(e)
 
 
 def delete_message(receipt_handle):
     sqs = get_connection_sqs()
-    queue_url = config_sqs()['queue_url']
+    queue_url = os.environ.get('queue_url')
     sqs.delete_message(
         QueueUrl=queue_url,
         ReceiptHandle=receipt_handle
@@ -115,12 +114,11 @@ def delete_message(receipt_handle):
 
 
 def upload_file(file_name):
-    param = config_s3()
-    object_name = param['converted_bucket'] + file_name
+    object_name = os.environ.get('converted_bucket') + file_name
 
     # Upload the file
     s3_client = get_connection_s3()
-    bucket = param['bucket_name']
+    bucket = os.environ.get('bucket_name')
     try:
         response = s3_client.upload_file(file_name, bucket, object_name, ExtraArgs={'ACL':'public-read'})
     except ClientError as e:
@@ -130,8 +128,7 @@ def upload_file(file_name):
 
 
 def update_video_status_converted(_id, file_name):
-    param = config_s3()
-    object_name = param['converted_bucket'] + file_name
+    object_name = os.environ.get('converted_bucket') + file_name
 
     mydb = get_connection_bd()
     mycol = mydb['concursos_uservideo']
