@@ -86,6 +86,7 @@ def proccess_video():
 
         if upload_file(new_file_name):
             delete_message(receipt_handle)
+            subprocess.run("rm {}".format(file_name), shell=True)
             subprocess.run("rm {}".format(new_file_name), shell=True)
             update_video_status_converted(video['id'], new_file_name)
             send_email(video['id'])
