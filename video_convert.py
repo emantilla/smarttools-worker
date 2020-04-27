@@ -141,6 +141,7 @@ def update_video_status_converted(_id, file_name):
 
 def send_email(_id):
     em = get_uservideo(_id)
+    concurso = get_concurso(em['concurso_id'])
     body = """<body>
     <p>Hola %s queremos agradecerte por participar en el concurso %s. Ingresa al <a href="%s/%s">sitio web</a> del concurso para ver tu video.</p>
     <br>
@@ -159,8 +160,8 @@ def send_email(_id):
         print(response.body)
     except Exception as e:
         print(e.message)
-
-
+    
+    
 def config_email(filename='db_conf.ini', section='ses_aws'):
     # create a parser
     parser = ConfigParser()
