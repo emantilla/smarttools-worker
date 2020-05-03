@@ -53,7 +53,7 @@ def get_unproccessed_video():
         MessageAttributeNames=[
             'All'
         ],
-        VisibilityTimeout=300,
+        VisibilityTimeout=900,
         WaitTimeSeconds=0
     )
 
