@@ -148,7 +148,7 @@ def send_email(_id):
     <p>Cordialmente el equio de SmartTools</p>
     </body>""" % (em['user_name'], concurso['name'], os.environ.get('base_url'), concurso['uniq_url'])
     message = Mail(
-    from_email='smarttools-api@example.com',
+    from_email='smarttools-web@example.com',
     to_emails=em['user_email'],
     subject="{} - Revisa tu participación en el concurso {}".format(str(em['user_name']), str(concurso['name'])),
     html_content=body)
